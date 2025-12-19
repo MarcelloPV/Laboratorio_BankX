@@ -17,3 +17,25 @@ logging:
     org.springframework.r2dbc: warn
     org.springframework.data.mongodb: info
     org.hibernate.SQL: debug
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      riskClient:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+  retry:
+    instances:
+      riskClient:
+        maxAttempts: 3
+        waitDuration: 200ms
+  timelimiter:
+    instances:
+      riskClient:
+        timeoutDuration: 1s

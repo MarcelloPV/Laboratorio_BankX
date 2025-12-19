@@ -13,6 +13,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
+import com.example.demo.config.LogContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -23,21 +26,27 @@ public class TransactionService {
 
   private final AccountRepository accountRepository;
   private final TransactionRepository transactionRepository;
-  private final RiskService riskService;
+  //private final RiskService riskService;
+  private final RiskRemoteClient riskClient;
+  private final com.example.demo.config.LogContext logContext;
 
   private final Sinks.Many<Transaction> txSink =
       Sinks.many().multicast().onBackpressureBuffer();
 
+  private static final Logger log = LogManager.getLogger(TransactionService.class);
+
+
+
   public Mono<Transaction> create(CreateTxRequest req) {
     String type = req.getType().toUpperCase();
 
-    return accountRepository.findByNumber(req.getAccountNumber())
+    Mono<Transaction> pipeline = accountRepository.findByNumber(req.getAccountNumber())
         .switchIfEmpty(Mono.error(new BusinessException(
             "account_not_found",
             "No existe la cuenta: " + req.getAccountNumber()
         )))
         .flatMap(account ->
-            riskService.isAllowed(account.getCurrency(), type, req.getAmount())
+            riskClient.isAllowed(account.getCurrency(), type, req.getAmount())
                 .flatMap(allowed -> {
                   if (!allowed) {
                     return Mono.error(new BusinessException(
@@ -47,7 +56,14 @@ public class TransactionService {
                   }
                   return applyAndSave(account, type, req.getAmount());
                 })
-        );
+        )
+        .doOnSubscribe(s -> log.debug("create_tx account={} type={} amount={}",
+            req.getAccountNumber(), type, req.getAmount()))
+        .doOnSuccess(tx -> log.info("tx_created account={} type={} amount={} status={}",
+            req.getAccountNumber(), type, req.getAmount(), tx.getStatus()));
+
+    // Add corrId to MDC for the lifetime of this request chain
+    return logContext.withMdc(pipeline);
   }
 
   private Mono<Transaction> applyAndSave(Account account, String type, BigDecimal amount) {

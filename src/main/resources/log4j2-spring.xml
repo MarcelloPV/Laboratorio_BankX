@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+  <Appenders>
+    <Console name="STDOUT" target="SYSTEM_OUT">
+      <JsonLayout compact="true"
+                  eventEol="true"
+                  stacktraceAsString="true"
+                  includeTimeMillis="true"/>
+    </Console>
+  </Appenders>
+
+  <Loggers>
+    <Logger name="org.springframework" level="INFO"/>
+    <Logger name="org.hibernate" level="WARN"/>
+    <Logger name="org.mongodb.driver" level="WARN"/>
+    <Logger name="com.example.demo" level="DEBUG"/>
+
+    <Root level="INFO">
+      <AppenderRef ref="STDOUT"/>
+    </Root>
+  </Loggers>
+</Configuration>
