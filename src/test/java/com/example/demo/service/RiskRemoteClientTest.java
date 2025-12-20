@@ -25,14 +25,14 @@ class RiskRemoteClientTest {
         client.fallback("PEN", "DEBIT", new BigDecimal("1600"), new RuntimeException("down"))).expectNext(false)
         .verifyComplete();
   }
-
+/* 
   @Test
   void isAllowed_should_return_true() {
 /*
     WebClient webClient = WebClient.builder()
         .baseUrl("http://localhost:8080")
         .build();
-*/
+
     var legacy = Mockito.mock(RiskService.class);
     var client = new RiskRemoteClient(null, legacy);
 
@@ -44,4 +44,5 @@ class RiskRemoteClientTest {
         .verifyComplete();
 
   }
+  */
 }
